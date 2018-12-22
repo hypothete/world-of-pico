@@ -2,8 +2,7 @@
 
 ## Roadmap
 
-- get camera working
-- load a map
+- warp between maps
 - set pins using JS
 - get cart reading from pins
 - transfer a map
