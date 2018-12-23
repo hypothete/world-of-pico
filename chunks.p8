@@ -6,7 +6,18 @@ __lua__
 actions={}
 objects={}
 
+loadmsg='loading map'
+
+function rpin(n)
+	return peek(0x5f80+n)
+end
+
+function wpin(n,i)
+	poke(0x5f80+n,i)
+end
+
 m={
+	id=0,
 	w=16,
 	h=32,
 	data={
@@ -51,6 +62,7 @@ m.spr=function(n)
 end
 
 m.set=function()
+	--writes mapdata to memory
 	local ct=0
 	for y=0,m.h-1 do
 		for x=0,m.w-1 do
@@ -58,6 +70,47 @@ m.set=function()
 			mset(x,y,s)
 			ct+=1
 		end
+	end
+end
+
+m.startload=function(id)
+	--reset the map
+	m.id=id
+	m.data={}
+	m.w=0
+	m.h=0
+	wpin(1,m.id)--id to request
+	wpin(0,1)--make req
+end
+
+m.load=function()
+	local q=rpin(0)
+	if q==2 then
+		loadmsg='getting map dimensions'
+		--get map dimensions
+		m.w=rpin(1)
+		m.h=rpin(2)
+		wpin(0,3)
+	elseif q==4 then
+		--load in map data
+		loadmsg='loading map data'
+		for i=1,16 do
+			add(m.data,rpin(i))
+		end
+		if #m.data==m.w*m.h then
+			--done, req p.xy
+			wpin(0,5)
+		else
+			--get more
+			wpin(0,3)
+		end
+	elseif q==6 then
+		loadmsg='loading player xy'
+		p.x=rpin(1)*8
+		p.y=rpin(2)*8
+		wpin(0,0)
+		m.set()
+		state=1--done
 	end
 end
 -->8
@@ -198,25 +251,40 @@ end
 -->8
 --main
 
+state=0
+--0=load map
+--1=game
+
 function _init()
-	m.set()
+	m.startload(0)
 end
 
 function _update()
-	p.move()
-	for c in all(actions) do
-		if costatus(c) then
-			coresume(c)
-		else
-			del(actions, c)
-		end
+	if state==0 then
+		--load map
+		m.load()
+	elseif state == 1 then
+		--game loop
+		p.move()
+ 	for c in all(actions) do
+ 		if costatus(c) then
+ 			coresume(c)
+ 		else
+ 			del(actions, c)
+ 		end
+ 	end
+ 	cam.move()
 	end
-	cam.move()
+	
 end
 
 function _draw()
 	cls()
- cam.draw()
+ if state==0 then
+ print(loadmsg,8,8)
+ elseif state==1 then
+ 	cam.draw()
+ end
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -238,3 +306,5 @@ __gfx__
 __gff__
 0100000000000000000000000000000000000102010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+__sfx__
+01040000180501c0501f05024050280502b0500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
