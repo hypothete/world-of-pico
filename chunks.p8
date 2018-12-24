@@ -183,18 +183,24 @@ cam={
 cam.move=function()
 	cam.x=p.x-56
 	cam.y=p.y-56
-	if cam.x<0 then
-		cam.x=0
+	if m.w>=16 then
+		if cam.x<0 then
+ 		cam.x=0
+ 	elseif cam.x>m.w*8-128 then
+ 		cam.x=m.w*8-128
+ 	end
+	else
+		cam.x=m.w*8/2-64
 	end
-	if cam.y<0 then
-		cam.y=0
-	end
-	if cam.x>m.w*8-128 then
-		cam.x=m.w*8-128
-	end
-	if cam.y>m.h*8-128 then
-		cam.y=m.h*8-128
-	end
+	if m.h>=16 then
+ 	if cam.y<0 then
+ 		cam.y=0
+ 	elseif cam.y>m.h*8-128 then
+ 		cam.y=m.h*8-128
+ 	end
+ else
+ 	cam.y=m.h*8/2-64
+ end
 	camera(cam.x,cam.y)
 end
 
