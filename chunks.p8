@@ -5,6 +5,7 @@ __lua__
 
 actions={}
 objects={}
+warps={}
 
 loadmsg='loading map'
 
@@ -20,28 +21,40 @@ m={
 	id=0,
 	w=0,
 	h=0,
+	px=0,--player start
+	py=0,
 	data={}
 }
 
-m.set=function()
+m.set=function(cl)
 	--writes mapdata to memory
+	--if cl is true, clears map
 	local ct=0
 	for y=0,m.h-1 do
 		for x=0,m.w-1 do
-			local s=m.data[ct+1]
-			--set sprite
-			mset(x,y,s)
-			ct+=1
+			if cl then
+				mset(x,y,0)
+			else
+				local s=m.data[ct+1]
+ 			--set sprite
+ 			mset(x,y,s)
+ 			ct+=1
+			end
 		end
 	end
 end
 
-m.startload=function(id)
+
+m.startload=function(id,x,y)
+	state=0
 	--reset the map
+	m.set(true)
 	m.id=id
 	m.data={}
 	m.w=0
 	m.h=0
+	m.px=x
+	m.py=y
 	wpin(1,m.id)--id to request
 	wpin(0,1)--make req
 end
@@ -61,18 +74,29 @@ m.load=function()
 			add(m.data,rpin(i))
 		end
 		if #m.data==m.w*m.h then
-			--done, req p.xy
+			--done, req warps
+			--clear warps first
+			warps={}
 			wpin(0,5)
 		else
 			--get more
 			wpin(0,3)
 		end
 	elseif q==6 then
-		loadmsg='loading player xy'
-		p.x=rpin(1)*8
-		p.y=rpin(2)*8
+		loadmsg='loading warps'
+		local w={}
+		w.x=rpin(1)
+		w.y=rpin(2)
+		w.to=rpin(3)
+		w.tx=rpin(4)
+		w.ty=rpin(5)
+		add(warps,w)
+		wpin(0,5)--req more
+	elseif q==7 then
 		wpin(0,0)
-		m.set()
+		m.set(false)
+		p.x=m.px*8
+		p.y=m.py*8
 		state=1--done
 	end
 end
@@ -101,6 +125,7 @@ p.step=function(x,y)
 				yield()
 			end
 			p.moving=false
+			p.cwarps()
 	end)
 	add(actions, c)
 end
@@ -170,7 +195,17 @@ p.move=function()
 			p.step(dx,dy)
 		end
 	end
+end
 
+p.cwarps=function()
+	local wx=p.x/8
+	local wy=p.y/8
+	for i=1,#warps do
+		local w=warps[i]
+		if w.x==wx and w.y==wy then
+			m.startload(w.to,w.tx,w.ty)
+		end
+	end
 end
 -->8
 --camera
@@ -223,7 +258,7 @@ state=0
 --1=game
 
 function _init()
-	m.startload(0)
+	m.startload(0,4,4)
 end
 
 function _update()
@@ -248,7 +283,8 @@ end
 function _draw()
 	cls()
  if state==0 then
- print(loadmsg,8,8)
+ camera(0,0)
+ print(loadmsg,0,0)
  elseif state==1 then
  	cam.draw()
  end
