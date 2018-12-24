@@ -137,7 +137,7 @@ p.btnp=function(k)
 			return false
 		end
 		p.btim+=1
-		if p.btim<10 then
+		if p.btim<8 then
 			return false
 		else
 			return true
@@ -198,6 +198,8 @@ p.move=function()
 end
 
 p.cwarps=function()
+	--check warps when entering
+	--a cell
 	local wx=p.x/8
 	local wy=p.y/8
 	for i=1,#warps do
