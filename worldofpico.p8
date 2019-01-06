@@ -253,7 +253,10 @@ cam.sees=function(o)
 		o.y<=cam.y+128
 end
 -->8
---main
+--world of pico
+--by hypothete
+
+--an experiment using the gpio pins
 
 state=0
 --0=load map
